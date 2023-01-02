@@ -1,6 +1,7 @@
-# Copyright (c) 2022 Taner Esat <t.esat@fz-juelich.de>
+# Copyright (c) 2022-2023 Taner Esat <t.esat@fz-juelich.de>
 
 import pyvisa
+
 
 class M8190A():
     def __init__(self, VisaResourceString):
@@ -249,12 +250,12 @@ class M8190A():
         self.write(':TRAC{}:IQIM {}, "{}", BIN, IONLY, ON, ALEN'.format(channel, segmentId, file))
 
     def defineSequence(self, channel, sequenceTable, mode):
-        """Still todo.
+        """Defines a new sequence made of arbitrary waveforms.
 
         Args:
-            channel ([type]): [description]
-            sequenceTable ([type]): [description]
-            mode ([type]): [description]
+            channel (int): Channel number.
+            sequenceTable (list): List of dictionaries. Dictionary must contain the following keys: 'entryNumber': sequence table entry in the sequence. 'segmentID': id of the segment. 'loop': number of segment loop iterations.
+            mode (str): 'COND': Advancement mode - Conditional
         """        
         err, resp = self.query(':SEQ{}:DEF:NEW? {}'.format(channel, len(sequenceTable)))
         sequenceId = int(resp)

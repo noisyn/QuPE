@@ -1,15 +1,30 @@
-# Copyright (c) 2022 Taner Esat <t.esat@fz-juelich.de>
+# Copyright (c) 2022-2023 Taner Esat <t.esat@fz-juelich.de>
 
-import numpy as np 
+import json
 import os
 import time
-import json
+
 
 def saveData(generalSettings, scheme, comment, additionalInformation, data, experimentType='data'):
+    """Saves measurement data as JSON file.
+
+    Args:
+        generalSettings (dict): Generel settings.
+        scheme (dict): Pump-Probe or RF measurement scheme.
+        comment (dict): Comments.
+        additionalInformation (dict): Additional information.
+        data (dict): Measurement data.
+        experimentType (str, optional): 'TF': Transfer function data. 'CT': Crosstalk data. 'Data': Experimental data. Defaults to 'data'.
+
+    Returns:
+        str: Path and filename of the saved JSON file.
+    """    
     currentDate = time.strftime('%Y-%m-%d', time.localtime())
 
     if experimentType == 'TF':
         folder = os.path.join(generalSettings['TF_Folder'], currentDate)
+    elif experimentType == 'CT':
+        folder = os.path.join(generalSettings['CT_Folder'], currentDate)
     else:
         folder = os.path.join(generalSettings['Data_Folder'], currentDate)
         
@@ -25,6 +40,15 @@ def saveData(generalSettings, scheme, comment, additionalInformation, data, expe
     return filename
 
 def loadData(path, filename):
+    """Loads a JSON data file.
+
+    Args:
+        path (str): Path of the file.
+        filename (str): Filename without file extension.
+
+    Returns:
+        dict: Read-in data.
+    """    
     file = '{}.json'.format(os.path.join(path, filename))
     with open(file) as json_file:
         data = json.load(json_file)

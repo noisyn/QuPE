@@ -1,7 +1,8 @@
-# Copyright (c) 2022 Taner Esat <t.esat@fz-juelich.de>
+# Copyright (c) 2022-2023 Taner Esat <t.esat@fz-juelich.de>
 
-import pyvisa
 import numpy as np
+import pyvisa
+
 
 class SMB100B():
     def __init__(self, VisaResourceString):
@@ -117,6 +118,15 @@ class SMB100B():
             width (float): Pulse width in seconds (s).
         """        
         self.write(':PULM:WIDT {}'.format(width))
+
+    def setPulseTransitionMode(self, mode='FAST'):
+        """Sets the transition mode for the pulse signal.
+
+        Args:
+            mode (str, optional): 'SMO': flattens the slew rate, resulting in longer rise/fall times. 'FAST': enables fast transitions with shortest rise and fall times.
+        """
+        if mode == 'SMO' or mode == 'FAST':
+            self.write(':PULM:TTYPe {}'.format(mode))
     
     def switchPulseGeneratorOn(self):
         """Activates pulse modulation.

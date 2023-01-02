@@ -1,24 +1,39 @@
-# Copyright (c) 2022 Taner Esat <t.esat@fz-juelich.de>
+# Copyright (c) 2022-2023 Taner Esat <t.esat@fz-juelich.de>
 
-from M8190 import  M8190A
-from NIDAQ import NIDAQ
-from DataManagement import *
-import numpy as np
-import matplotlib.pyplot as plt
 import os
 import time
 
+import matplotlib.pyplot as plt
+import numpy as np
+
+from .DataManagement import *
+from .M8190 import M8190A
+from .NIDAQ import NIDAQ
+
+
 def calculateSegmentParameter(generalSettings, pulseScheme):
+    """Calculates the segment parameters.
+
+    Args:
+        generalSettings (dict): General settings of the AWG.
+        pulseScheme (dict): Definition of the pulse sequence.
+
+    Raises:
+        Exception: Wrong combination of parameters.
+
+    Returns:
+        int, float: Number of points per segment; Calculated sampling frequency
+    """  
     # Calculate duration of one cycle and one segment
-    cycle_duration = (1/pulseScheme['modulationFreq'])/2
+    cycle_duration = (1/pulseScheme['modulationFreq (Hz)'])/2
     segment_duration = cycle_duration / pulseScheme['repetitions']
 
     # Calculate sampling frequency
-    sampling_frequency = round(1 / pulseScheme['resolution'])    
-    if sampling_frequency < generalSettings['AWG_SamplingFrequencyMin']:
-        sampling_frequency = generalSettings['AWG_SamplingFrequencyMin']
-    elif sampling_frequency > generalSettings['AWG_SamplingFrequencyMax']:
-        sampling_frequency = generalSettings['AWG_SamplingFrequencyMax']
+    sampling_frequency = round(1 / pulseScheme['resolution (s)'])    
+    if sampling_frequency < generalSettings['AWG_SamplingFrequencyMin (1/s)']:
+        sampling_frequency = generalSettings['AWG_SamplingFrequencyMin (1/s)']
+    elif sampling_frequency > generalSettings['AWG_SamplingFrequencyMax (1/s)']:
+        sampling_frequency = generalSettings['AWG_SamplingFrequencyMax (1/s)']
 
     # Estimate adjusted/new time resolution and number of points per segment
     dt = 1 / sampling_frequency
@@ -31,15 +46,22 @@ def calculateSegmentParameter(generalSettings, pulseScheme):
     sampling_frequency = round(1/dt)
 
     # Check Sampling frequency 
-    if sampling_frequency < generalSettings['AWG_SamplingFrequencyMin'] or sampling_frequency > generalSettings['AWG_SamplingFrequencyMax']:
+    if sampling_frequency < generalSettings['AWG_SamplingFrequencyMin (1/s)'] or sampling_frequency > generalSettings['AWG_SamplingFrequencyMax (1/s)']:
         errorMessage = 'Invalid parameters set:\nSampling frequency: {} Hz\nPoints per Segment: {}'.format(sampling_frequency, points_per_segment)
         raise Exception(errorMessage)
 
     return points_per_segment, sampling_frequency
 
 def showPumpProbeSegment(generalSettings, pulseScheme, sweepStep):
+    """Displays the pulse sequence for a given sweep step. 
+
+    Args:
+        generalSettings (dict): General settings of the AWG.
+        pulseScheme (dict): Definition of the pulse sequences.
+        sweepStep (int): Number of sweep to be displayed.
+    """    
     # Calculate duration of one cycle and one segment
-    cycle_duration = (1/pulseScheme['modulationFreq'])/2
+    cycle_duration = (1/pulseScheme['modulationFreq (Hz)'])/2
     segment_duration = cycle_duration / pulseScheme['repetitions']
     points_per_segment, sampling_frequency = calculateSegmentParameter(generalSettings, pulseScheme)   
 
@@ -61,14 +83,25 @@ def showPumpProbeSegment(generalSettings, pulseScheme, sweepStep):
 
 
 def genPumpProbeSegments(generalSettings, pulseScheme, sweepStep, displayingMode=False):
+    """Creates the pump-probe segments for a given sweep step.
+
+    Args:
+        generalSettings (dict): General settings of the AWG.
+        pulseScheme (dict): Definition of the pulse sequences.
+        sweepStep (int): Number of sweep to be calculated.
+        displayingMode (bool, optional): True: Calculates the segments in SI units for displaying. False: Calculates the segments in DAC units for AWG. Defaults to False.
+
+    Returns:
+        str, str, int: Filename for cycle A, Filename for cycle B, Calculated sampling frequency
+    """    
     # Calculate duration of one cycle and one segment
-    cycle_duration = (1/pulseScheme['modulationFreq'])/2
+    cycle_duration = (1/pulseScheme['modulationFreq (Hz)'])/2
     segment_duration = cycle_duration / pulseScheme['repetitions']
 
     points_per_segment, sampling_frequency = calculateSegmentParameter(generalSettings, pulseScheme)
 
     # Scaling factor for DAC values of Amplitude
-    scalingAmplitude =  2**(generalSettings['AWG_ModeBit']-1) / generalSettings['AWG_Amplitude']
+    scalingAmplitude =  2**(generalSettings['AWG_ModeBit']-1) / generalSettings['AWG_Amplitude (V)']
 
     if displayingMode == True:
         segment_cycleA = np.zeros(points_per_segment)
@@ -81,22 +114,22 @@ def genPumpProbeSegments(generalSettings, pulseScheme, sweepStep, displayingMode
     for pulse in pulseScheme['pulses']:
         if pulse['type'] == 'DC':
             if pulse['sweepTime']:
-                time_offset = (pulse['endTime'] - pulse['startTime'])/(pulseScheme['sweepSteps']-1) * sweepStep
-                start_time = pulse['startTime'] + time_offset
+                time_offset = (pulse['endTime (s)'] - pulse['startTime (s)'])/(pulseScheme['sweepSteps']-1) * sweepStep
+                start_time = pulse['startTime (s)'] + time_offset
             else:
-                start_time = pulse['startTime']
+                start_time = pulse['startTime (s)']
 
             if pulse['sweepDuration']:
-                additional_duration = (pulse['endDuration'] - pulse['startDuration'])/(pulseScheme['sweepSteps']-1) * sweepStep
-                duration = pulse['startDuration'] + additional_duration
+                additional_duration = (pulse['endDuration (s)'] - pulse['startDuration (s)'])/(pulseScheme['sweepSteps']-1) * sweepStep
+                duration = pulse['startDuration (s)'] + additional_duration
             else:
-                duration = pulse['startDuration']
+                duration = pulse['startDuration (s)']
 
             if pulse['sweepAmplitude']:
-                additional_amplitude = (pulse['endAmplitude'] - pulse['startAmplitude'])/(pulseScheme['sweepSteps']-1) * sweepStep
-                amplitude = pulse['startAmplitude'] + additional_amplitude
+                additional_amplitude = (pulse['endAmplitude (V)'] - pulse['startAmplitude (V)'])/(pulseScheme['sweepSteps']-1) * sweepStep
+                amplitude = pulse['startAmplitude (V)'] + additional_amplitude
             else:
-                amplitude = pulse['startAmplitude']
+                amplitude = pulse['startAmplitude (V)']
 
             if displayingMode == False:
                 # Amplitude in DAC values
@@ -133,8 +166,21 @@ def genPumpProbeSegments(generalSettings, pulseScheme, sweepStep, displayingMode
         return fileCycleA, fileCycleB, sampling_frequency
 
 def measurePumpProbe(generalSettings, pulseScheme, acquisitionTime, settlingTime, comment={}, save=True):
+    """Performs a pump-probe measurement using lock-in detection technique.
+
+    Args:
+        generalSettings (dict): General settings of the AWG.
+        pulseScheme (dict): Definition of the pulse sequence.
+        acquisitionTime (float): Measurement time in seconds.
+        settlingTime (float): Settling time before measurement in seconds.
+        comment (dict, optional): Comments. Defaults to {}.
+        save (bool, optional): True: Save measurement data. False: Data is not saved. Defaults to True.
+
+    Returns:
+        ndarray, ndarray: Sweep numbers, Averaged lock-in signal for a individual sweeps.
+    """    
     # DAQ
-    daq = NIDAQ(generalSettings['DAQ_Device'], samplingRate=generalSettings['DAQ_SamplingRate'])
+    daq = NIDAQ(generalSettings['DAQ_Device'], samplingRate=generalSettings['DAQ_SamplingRate (1/s)'])
 
     # Connect AWG
     awg = M8190A(generalSettings['AWG_VisaResource'])
@@ -149,11 +195,11 @@ def measurePumpProbe(generalSettings, pulseScheme, acquisitionTime, settlingTime
     awg.setTriggerSource(source='EXT')
     awg.setTriggerImpedance(impedance='HIGH')
     awg.setTriggerPolarity(polarity='POS')
-    awg.setTriggerLevel(level=generalSettings['AWG_TriggerLevel'])
+    awg.setTriggerLevel(level=generalSettings['AWG_TriggerLevel (V)'])
     awg.setTriggerMode(generalSettings['AWG_Channel'], 'TRIG')
     # Amplitudes
-    awg.setAmplitude(generalSettings['AWG_Channel'], generalSettings['AWG_Amplitude'])
-    awg.setMarkerAmplitude(generalSettings['AWG_Channel'], generalSettings['AWG_SampleMarkerAmplitude'], marker='SAMP')
+    awg.setAmplitude(generalSettings['AWG_Channel'], generalSettings['AWG_Amplitude (V)'])
+    awg.setMarkerAmplitude(generalSettings['AWG_Channel'], generalSettings['AWG_SampleMarkerAmplitude (V)'], marker='SAMP')
     awg.setMarkerOffset(generalSettings['AWG_Channel'], 0, marker='SAMP')
     # Set Sampling Frequency
     _, sampling_frequency = calculateSegmentParameter(generalSettings, pulseScheme)
@@ -191,7 +237,7 @@ def measurePumpProbe(generalSettings, pulseScheme, acquisitionTime, settlingTime
         awg.playChannel(generalSettings['AWG_Channel'])
         time.sleep(1)
         # Trigger AWG using DAQ
-        triggerPulse = np.linspace(0, generalSettings['DAQ_OutputAmplitude_TriggerAWG'], 50)
+        triggerPulse = np.linspace(0, generalSettings['DAQ_OutputAmplitude_TriggerAWG (V)'], 50)
         daq.writeAnalog(generalSettings['DAQ_OutputChannel_TriggerAWG'], triggerPulse)
         # Wait settling time
         time.sleep(settlingTime)
@@ -211,7 +257,7 @@ def measurePumpProbe(generalSettings, pulseScheme, acquisitionTime, settlingTime
     # Save data
     if save == True:
         additionalInformation = {'sampling_frequency': sampling_frequency, 'acquisitionTime': acquisitionTime, 'settlingTime': settlingTime}
-        lockinSignal = {'Sweep number (1)': sweepNumber.tolist(), 'LockIn Signal (a.u.)': lockinSignal.tolist()}
-        saveData(generalSettings, pulseScheme, comment, additionalInformation, lockinSignal)
+        data = {'Sweep number (1)': sweepNumber.tolist(), 'LockIn Signal (a.u.)': lockinSignal.tolist()}
+        saveData(generalSettings, pulseScheme, comment, additionalInformation, data)
 
     return sweepNumber, lockinSignal

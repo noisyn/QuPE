@@ -1,3 +1,13 @@
 
 SMA100B_Manual.pdf
 M8190A_Manual.pdf
+*.pyc
+*.json
+*.env
+*.dat
+test_CT.py
+test_DAQ.py
+test_ESR.py
+test_poly.py
+test_PP.py
+measureRF.py

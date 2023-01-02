@@ -1,10 +1,16 @@
 # QuPE
-QuPE is a Python library for pump-probe and electron spin resonance measurements in scanning tunneling microscopy. 
+QuPE is a Python library for pump-probe measurements and constant amplitude radio-frequency sweeps in a scanning tunneling microscope (STM) using the lock-in detection technique.
 
-The implementations are designed for the following hardware: 
+It allows for the correction of losses due to frequency-dependent transmission in the cabling. Furthermore, additional signals due to capacitive crosstalk can be accounted for when calculating the transfer function.
+
+The generation of the constant amplitude radio-frequency sweeps essentially follows the description of Paul et al. - [Review of Scientific Instruments 87, 074703 (2016)](https://doi.org/10.1063/1.4955446). However, it extends the implementation by compensation for additional crosttalk signals. The pump-probe measurement technique in the STM is described, for example, by Loth. et al. - [Science 329, 1628 (2010)](https://doi.org/10.1126/science.1191688)
+
+The implementations here are designed for the following hardware:
 - Keysight M8190A Arbitrary Waveform Generator
 - R&S®SMA100B RF Signal Generator
 - NI USB-6212
+
+Current version 0.23 (02.01.2022)
 
 ## Installation
 Clone the Github repository using

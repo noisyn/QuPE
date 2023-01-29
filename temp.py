@@ -67,8 +67,8 @@ plt.ylim(0,0.3)
 plt.show()
 
 # %%
-import Anros.SPMLibs.Nanonis as nn
-import Anros.spectra.broadening as bd
+import Emia.SPMLibs.Nanonis as nn
+import Emia.spectroscopy.broadening as bd
 
 folder = 'spectra'
 file = 'Bias-Spectroscopy00002.dat'

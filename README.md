@@ -10,7 +10,7 @@ The implementations here are designed for the following hardware:
 - R&S®SMA100B RF Signal Generator
 - NI USB-6212
 
-Current version 0.23 (02.01.2022)
+Current version 0.23 (02.01.2023)
 
 ## Installation
 Clone the Github repository using
